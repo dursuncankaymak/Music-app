@@ -69,7 +69,15 @@ Servis listesi masaüstüyle ortaktır: `npm run sync`, `renderer/services.js` d
 
 ### APK'yı almak
 
-**En kolay yol — GitHub Actions:** `android-app/` altında bir değişiklik push edildiğinde (veya Actions sekmesinden elle tetiklendiğinde) `.github/workflows/android.yml` bir debug APK derler. Actions → ilgili çalıştırma → *Artifacts* → `aria-music-debug-apk` dosyasını indirip telefonuna kur ("bilinmeyen kaynaklara izin ver" gerekebilir).
+**En kolay yol — Releases sayfası:** `android-app/` altında bir değişiklik push edildiğinde (veya Actions sekmesinden elle tetiklendiğinde) `.github/workflows/android.yml` bir APK derler ve deponun **Releases** sayfasına `aria-music.apk` olarak ekler. En yeni sürümün sabit indirme bağlantısı:
+
+```
+https://github.com/dursuncankaymak/Music-app/releases/latest/download/aria-music.apk
+```
+
+Telefonda bu bağlantıyı açıp APK'yı kur ("bilinmeyen kaynaklara izin ver" gerekebilir). Her derleme bir öncekinin üstüne güncelleme olarak kurulur; uygulamayı silmene gerek yok.
+
+> **İmzalama notu:** Depoda `android-app/android/app/debug.keystore` adında bir *debug* imzalama anahtarı bulunur. Bu sayede her CI derlemesi aynı anahtarla imzalanır ve Android yeni APK'yı güncelleme olarak kabul eder (aksi hâlde her derlemede rastgele anahtar üretilir ve "uygulama yüklenemedi" hatası alınır). Bu anahtar yalnızca kişisel kullanım içindir; Play Store'a yüklerken kendi gizli anahtarınla imzalanmış bir release derlemesi kullanmalısın.
 
 **Yerelde derlemek** (Android Studio veya Android SDK + JDK 17 kurulu olmalı):
 

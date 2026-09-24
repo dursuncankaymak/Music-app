@@ -9,6 +9,9 @@ on:
       - ".github/workflows/android.yml"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Debug APK derle
@@ -16,6 +19,10 @@ jobs:
     defaults:
       run:
         working-directory: android-app
+    env:
+      # Her derleme yeni bir sürüm numarası alır; telefon güncellemeyi böyle tanır.
+      ANDROID_VERSION_CODE: ${{ github.run_number }}
+      ANDROID_VERSION_NAME: 1.0.${{ github.run_number }}
 
     steps:
       - name: Depoyu al
@@ -48,11 +55,25 @@ jobs:
         working-directory: android-app/android
 
       - name: APK'yı yeniden adlandır
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk aria-music-debug.apk
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk aria-music.apk
 
-      - name: APK'yı yükle
+      - name: APK'yı artifact olarak yükle
         uses: actions/upload-artifact@v4
         with:
-          name: aria-music-debug-apk
-          path: android-app/aria-music-debug.apk
+          name: aria-music-apk
+          path: android-app/aria-music.apk
           retention-days: 30
+
+      - name: Releases sayfasına ham APK olarak ekle
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v${{ env.ANDROID_VERSION_NAME }}
+          name: Aria Music Android v${{ env.ANDROID_VERSION_NAME }}
+          body: |
+            Otomatik derlenen Android APK'sı (debug imzalı).
+
+            📱 Telefona kurmak için aşağıdaki `aria-music.apk` dosyasını indirip aç.
+
+            Kaynak: `${{ github.ref_name }}` @ ${{ github.sha }}
+          files: android-app/aria-music.apk
+          fail_on_unmatched_files: true
