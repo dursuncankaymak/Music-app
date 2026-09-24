@@ -1,6 +1,7 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, shell, globalShortcut } = require('electron');
+const electron = require('electron');
+const { app, BrowserWindow, ipcMain, shell, globalShortcut, session } = electron;
 const path = require('path');
 
 // Web servislerinin (özellikle Google girişinin) Electron'u engellememesi için
@@ -77,7 +78,17 @@ function registerMediaKeys() {
   globalShortcut.register('MediaPreviousTrack', () => send('prev'));
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // castlabs Electron kullanılıyorsa Widevine CDM bileşeninin hazır olmasını
+  // bekle: Spotify, Apple Music ve TIDAL'ın DRM'li içerik çalabilmesi için gerekli.
+  if (electron.components) {
+    try {
+      await electron.components.whenReady();
+    } catch (err) {
+      console.error('Widevine bileşeni yüklenemedi (DRM içerik çalmayabilir):', err);
+    }
+  }
+
   createMainWindow();
   registerMediaKeys();
 
@@ -117,3 +128,16 @@ ipcMain.handle('app:open-external', (_event, url) => {
 });
 
 ipcMain.handle('app:get-user-agent', () => USER_AGENT);
+
+// Verilen bölümlerin (partition) tüm oturum verisini (çerez, depolama, önbellek) siler.
+const PARTITION_RE = /^(persist:|inmemory-)[a-z0-9-]+$/;
+
+ipcMain.handle('app:clear-sessions', async (_event, partitions) => {
+  if (!Array.isArray(partitions)) return;
+  for (const name of partitions) {
+    if (typeof name !== 'string' || !PARTITION_RE.test(name)) continue;
+    const ses = session.fromPartition(name);
+    await ses.clearStorageData();
+    await ses.clearCache();
+  }
+});

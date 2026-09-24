@@ -8,23 +8,28 @@ Uygulama yalnızca bir arayüzdür: müzik dosyası indirmez, hesap bilgisi sakl
 
 - **6 servis tek pencerede** — kenar çubuğundan tek tıkla geçiş
 - **Modern, koyu temalı arayüz** — özel başlık çubuğu, karşılama ekranı, akıcı animasyonlar
-- **Gizlilik öncelikli** — oturumlar (çerezler dahil) yalnızca **bellekte (RAM)** tutulur; uygulama kapanınca her şey silinir, diske hiçbir şey yazılmaz
+- **Girişler hatırlanır** — bir kere giriş yaparsın, uygulama her açılışta seni hatırlar (istersen kapatılabilir, aşağıya bak)
+- **DRM desteği** — Widevine içeren [castlabs Electron](https://github.com/castlabs/electron-releases) sayesinde Spotify, Apple Music ve TIDAL'daki korumalı içerik de çalar
 - **Harici linkler sistem tarayıcısında** — servislerin açmak istediği yeni pencereler/dış bağlantılar Windows'taki varsayılan tarayıcında açılır
 - **Medya tuşları** — klavyendeki ▶⏸ / ⏭ / ⏮ tuşları aktif servisi kontrol eder
 - **Klavye kısayolları** — `Ctrl+1` … `Ctrl+6` ile servisler arasında geçiş
 - **Gezinme araç çubuğu** — geri / ileri / yenile / sistem tarayıcısında aç
 - Her servis **tembel yüklenir** (tıklayana kadar açılmaz) ve arka planda çalmaya devam eder
 
-## 🔐 Giriş nasıl çalışıyor?
+## 🔐 Giriş ve oturumlar nasıl çalışıyor?
 
-Tarayıcılar güvenlik gereği çerezlerini başka uygulamalarla **paylaşamaz** — bu yüzden Windows'taki tarayıcında yaptığın bir giriş uygulamaya aktarılamaz (bu, Spotify/Google dahil hiçbir uygulamada teknik olarak mümkün değildir).
+Giriş, uygulamanın **içindeki görünümde**, ilgili servisin kendi resmî giriş sayfasında yapılır (uygulama kendini güncel bir Chrome olarak tanıttığı için Google girişi de sorunsuz çalışır). Şifren hiçbir zaman uygulamanın kodundan geçmez; doğrudan servisin sunucusuna gider. Uygulamanın kendi backend'i yoktur.
 
-Bunun yerine Aria Music şöyle çalışır:
+Oturum saklama iki modda çalışır — kenar çubuğunun altındaki **"Oturumları hatırla"** anahtarıyla seçilir:
 
-1. Giriş, uygulamanın **içindeki görünümde** yapılır (uygulama kendini güncel bir Chrome olarak tanıttığı için Google girişi de sorunsuz çalışır).
-2. Oturum bilgisi **yalnızca RAM'de** tutulur — `persist:` bölümü kullanılmaz, diske tek bayt yazılmaz.
-3. Uygulamayı kapattığında oturum **tamamen yok olur**; bir sonraki açılışta istersen yeniden giriş yaparsın.
-4. Servislerin dışarı açmak istediği her bağlantı (ör. "tarayıcıda aç", ödeme sayfaları) otomatik olarak **sistem tarayıcısına** yönlendirilir.
+| Mod | Davranış |
+|---|---|
+| **Hatırla (varsayılan)** | Girişler bu bilgisayarda Chromium'un şifreli çerez deposunda saklanır (Windows'ta DPAPI ile senin kullanıcı hesabına kilitlidir). Uygulamayı her açtığında girişli hâlde başlarsın. |
+| **Kapalı** | Oturumlar yalnızca bellekte (RAM) tutulur; uygulama kapanınca her şey silinir. |
+
+Kenar çubuğundaki **"Oturumları temizle"** butonu tüm servislerdeki girişleri, çerezleri ve önbelleği tek tıkla siler.
+
+Servislerin dışarı açmak istediği her bağlantı (ör. "tarayıcıda aç", ödeme sayfaları) otomatik olarak **sistem tarayıcısına** yönlendirilir.
 
 ## 🚀 Kurulum ve Çalıştırma
 
@@ -49,6 +54,8 @@ npm run dist:portable
 ```
 
 Çıktılar `dist/` klasörüne yazılır.
+
+> **DRM notu:** `npm start` ile geliştirme modunda Widevine (Spotify vb. korumalı içerik) doğrudan çalışır çünkü castlabs'in hazır ikili dosyaları imzalıdır. Paketlenmiş bir sürümü **dağıtacaksan** exe'nin castlabs'in ücretsiz [EVS servisi](https://github.com/castlabs/electron-releases/wiki/EVS) ile imzalanması gerekir; kendi bilgisayarında kullanmak için buna genelde gerek olmaz.
 
 ## 🗂 Proje yapısı
 

@@ -3,6 +3,26 @@
 /* global SERVICES */
 
 (() => {
+  // ---- Ayarlar ----
+  const SETTINGS_KEY = 'aria.settings';
+  const defaultSettings = { rememberSessions: true };
+
+  function loadSettings() {
+    try {
+      return { ...defaultSettings, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
+    } catch {
+      return { ...defaultSettings };
+    }
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch { /* depolama kullanılamıyor */ }
+  }
+
+  const settings = loadSettings();
+
   // ---- Durum ----
   let userAgent = '';
   let activeServiceId = null;
@@ -27,6 +47,9 @@
     btnMinimize: document.getElementById('btn-minimize'),
     btnMaximize: document.getElementById('btn-maximize'),
     btnClose: document.getElementById('btn-close'),
+    toggleRemember: document.getElementById('toggle-remember'),
+    btnClearSessions: document.getElementById('btn-clear-sessions'),
+    privacyNote: document.getElementById('privacy-note'),
   };
 
   const getService = (id) => SERVICES.find((s) => s.id === id);
@@ -75,11 +98,17 @@
   }
 
   // ---- Webview yönetimi ----
+  // "Oturumları hatırla" açıkken "persist:" bölümü kullanılır: girişler diske
+  // (Chromium'un şifreli çerez deposuna) yazılır ve yeniden açılışta hatırlanır.
+  // Kapalıyken bölüm yalnızca bellekte yaşar, uygulama kapanınca silinir.
+  function partitionFor(service) {
+    return settings.rememberSessions ? `persist:${service.id}` : `inmemory-${service.id}`;
+  }
+
   function createWebview(service) {
     const wv = document.createElement('webview');
     wv.setAttribute('src', service.url);
-    // "persist:" öneki YOK: oturum yalnızca bellekte yaşar, diske hiçbir şey yazılmaz.
-    wv.setAttribute('partition', `inmemory-${service.id}`);
+    wv.setAttribute('partition', partitionFor(service));
     wv.setAttribute('allowpopups', '');
     wv.setAttribute('useragent', userAgent);
     wv.dataset.serviceId = service.id;
@@ -204,6 +233,40 @@
     try { getActiveWebview()?.reload(); } catch { /* hazır değil */ }
   });
 
+  // ---- Oturum ayarları ----
+  function updatePrivacyNote() {
+    el.privacyNote.textContent = settings.rememberSessions
+      ? 'Girişlerin bu bilgisayarda şifreli olarak saklanır ve her açılışta hatırlanır.'
+      : 'Oturumlar yalnızca bellekte tutulur; uygulama kapanınca tamamen silinir.';
+  }
+
+  // Tüm webview'leri yıkıp aktif servisi yeni bölüm ayarıyla yeniden açar.
+  function rebuildWebviews() {
+    webviews.forEach((wv) => wv.remove());
+    webviews.clear();
+    el.serviceList.querySelectorAll('.service-item').forEach((item) => {
+      item.classList.remove('loaded');
+    });
+    if (activeServiceId) activateService(activeServiceId);
+  }
+
+  el.toggleRemember.addEventListener('change', () => {
+    settings.rememberSessions = el.toggleRemember.checked;
+    saveSettings();
+    updatePrivacyNote();
+    rebuildWebviews();
+  });
+
+  el.btnClearSessions.addEventListener('click', async () => {
+    const onay = window.confirm(
+      'Tüm servislerdeki girişler, çerezler ve önbellek silinecek. Emin misin?'
+    );
+    if (!onay) return;
+    const partitions = SERVICES.flatMap((s) => [`persist:${s.id}`, `inmemory-${s.id}`]);
+    await window.aria.clearSessions(partitions);
+    rebuildWebviews();
+  });
+
   // ---- Medya tuşları ----
   // Aktif servisin oynatıcı butonuna tıklamayı dener; bulamazsa sayfadaki
   // <video>/<audio> öğesini doğrudan oynatır/duraklatır.
@@ -252,6 +315,8 @@
   // ---- Başlat ----
   async function init() {
     userAgent = await window.aria.getUserAgent();
+    el.toggleRemember.checked = settings.rememberSessions;
+    updatePrivacyNote();
     buildSidebar();
     buildHomeCards();
   }
