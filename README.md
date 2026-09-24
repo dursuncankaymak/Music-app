@@ -11,6 +11,7 @@ Uygulama yalnızca bir arayüzdür: müzik dosyası indirmez, hesap bilgisi sakl
 - **Girişler hatırlanır** — bir kere giriş yaparsın, uygulama her açılışta seni hatırlar (istersen kapatılabilir, aşağıya bak)
 - **DRM desteği** — Widevine içeren [castlabs Electron](https://github.com/castlabs/electron-releases) sayesinde Spotify, Apple Music ve TIDAL'daki korumalı içerik de çalar
 - **Harici linkler sistem tarayıcısında** — servislerin açmak istediği yeni pencereler/dış bağlantılar Windows'taki varsayılan tarayıcında açılır
+- **Arka planda çalmaya devam eder** — pencereyi kapattığında müzik çalıyorsa uygulama sistem tepsisine (saatin yanına) küçülür ve çalmayı sürdürür; tepsi menüsünden oynat/duraklat, sonraki/önceki parça ve çıkış yapılabilir. Müzik çalmıyorsa X normal şekilde kapatır.
 - **Medya tuşları** — klavyendeki ▶⏸ / ⏭ / ⏮ tuşları aktif servisi kontrol eder
 - **Klavye kısayolları** — `Ctrl+1` … `Ctrl+6` ile servisler arasında geçiş
 - **Gezinme araç çubuğu** — geri / ileri / yenile / sistem tarayıcısında aç
@@ -59,11 +60,12 @@ npm run dist:portable
 
 ## 📱 Android sürümü
 
-`android-app/` klasöründe aynı tasarım diliyle hazırlanmış, [Capacitor](https://capacitorjs.com) tabanlı bir Android uygulaması bulunur. Masaüstünden farklı olarak servisleri uygulama içine gömmez; her servisi **Chrome Custom Tabs** ile açar. Bunun nedenleri:
+`android-app/` klasöründe aynı tasarım diliyle hazırlanmış, [Capacitor](https://capacitorjs.com) tabanlı bir Android uygulaması bulunur. Masaüstünden farklı olarak servisleri uygulama içine gömmez:
 
-- Google, Android WebView içinden hesap girişini engeller; Spotify'ın web oynatıcısı da mobil tarayıcıları uygulamaya yönlendirir.
-- Custom Tabs, telefondaki **Chrome'un kendi oturumlarını** paylaşır: Chrome'da girişliysen uygulamada da girişlisindir, tekrar giriş gerekmez. DRM ve Google girişi sorunsuz çalışır.
-- Uygulama yine hiçbir hesap bilgisi tutmaz; sadece en son açtığın servisi hatırlayıp "Kaldığın yerden devam et" kartı gösterir.
+1. **Servisin kendi uygulaması telefonda yüklüyse onu açar** (kartta "Uygulama" rozeti görünür). Arka planda çalma, bildirim kontrolleri ve kilit ekranı desteği zaten o uygulamalarda vardır; web sürümlerinde bunlar servislerin kendisi tarafından kısıtlanır (YouTube Music web'de arka plan çalma yalnızca Premium'a açıktır, Spotify'ın web oynatıcısı mobilde çalışmaz).
+2. **Yüklü değilse Chrome Custom Tabs ile açar.** Custom Tabs, telefondaki Chrome'un kendi oturumlarını paylaşır: Chrome'da girişliysen tekrar giriş gerekmez; Google girişi ve DRM sorunsuz çalışır (Android WebView'de Google girişi engellendiği için gömülü WebView tercih edilmedi).
+
+Uygulama hiçbir hesap bilgisi tutmaz; sadece en son açtığın servisi hatırlayıp "Kaldığın yerden devam et" kartı gösterir.
 
 Servis listesi masaüstüyle ortaktır: `npm run sync`, `renderer/services.js` dosyasını Android web klasörüne kopyalar.
 

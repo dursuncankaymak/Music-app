@@ -1,7 +1,18 @@
 'use strict';
 
 const electron = require('electron');
-const { app, BrowserWindow, ipcMain, shell, globalShortcut, session } = electron;
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  shell,
+  globalShortcut,
+  session,
+  Tray,
+  Menu,
+  nativeImage,
+  webContents,
+} = electron;
 const path = require('path');
 
 // Web servislerinin (özellikle Google girişinin) Electron'u engellememesi için
@@ -9,7 +20,21 @@ const path = require('path');
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
 
+const TRAY_ICON = path.join(__dirname, 'assets', 'tray.png');
+const APP_ICON = path.join(__dirname, 'build', 'icon.png');
+
 let mainWindow = null;
+let tray = null;
+let isQuitting = false;
+let trayHintShown = false;
+
+// Tek örnek: uygulama tepside gizliyken kısayola tekrar tıklanınca ikinci bir
+// kopya açmak yerine mevcut pencere öne getirilir.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', () => showMainWindow());
+}
 
 function isSafeExternalUrl(url) {
   try {
@@ -17,6 +42,45 @@ function isSafeExternalUrl(url) {
     return parsed.protocol === 'https:' || parsed.protocol === 'http:';
   } catch {
     return false;
+  }
+}
+
+// Herhangi bir servis görünümünden ses çıkıyor mu?
+function isAnythingPlaying() {
+  return webContents
+    .getAllWebContents()
+    .some((wc) => wc.getType() === 'webview' && !wc.isDestroyed() && wc.isCurrentlyAudible());
+}
+
+function showMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+function sendMediaAction(action) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('media:key', action);
+  }
+}
+
+function quitApp() {
+  isQuitting = true;
+  app.quit();
+}
+
+function hideToTray() {
+  mainWindow.hide();
+  if (!trayHintShown && tray && process.platform === 'win32') {
+    trayHintShown = true;
+    tray.displayBalloon({
+      iconType: 'info',
+      title: 'Aria Music arka planda çalıyor',
+      content:
+        'Müzik devam ediyor. Pencereyi açmak için tepsi simgesine tıkla; ' +
+        'tamamen kapatmak için sağ tık → Çıkış.',
+    });
   }
 }
 
@@ -29,12 +93,15 @@ function createMainWindow() {
     frame: false,
     backgroundColor: '#0d0f16',
     show: false,
+    icon: APP_ICON,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       webviewTag: true,
       spellcheck: false,
+      // Pencere gizliyken de arayüz ve medya tuşu köprüsü tam hızda çalışsın
+      backgroundThrottling: false,
     },
   });
 
@@ -48,9 +115,38 @@ function createMainWindow() {
   mainWindow.on('unmaximize', () => {
     mainWindow.webContents.send('window:maximized-state', false);
   });
+
+  // Kapat (X): bir şey çalıyorsa pencere tepsiye gizlenir ve müzik devam eder;
+  // sessizse uygulama normal şekilde kapanır.
+  mainWindow.on('close', (event) => {
+    if (isQuitting) return;
+    if (isAnythingPlaying()) {
+      event.preventDefault();
+      hideToTray();
+    }
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+}
+
+function createTray() {
+  tray = new Tray(nativeImage.createFromPath(TRAY_ICON));
+  tray.setToolTip('Aria Music');
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: "Aria Music'i göster", click: showMainWindow },
+      { type: 'separator' },
+      { label: 'Oynat / Duraklat', click: () => sendMediaAction('playpause') },
+      { label: 'Sonraki parça', click: () => sendMediaAction('next') },
+      { label: 'Önceki parça', click: () => sendMediaAction('prev') },
+      { type: 'separator' },
+      { label: 'Çıkış', click: quitApp },
+    ])
+  );
+  tray.on('click', showMainWindow);
+  tray.on('double-click', showMainWindow);
 }
 
 // Her webview için ortak güvenlik/davranış kuralları:
@@ -68,14 +164,9 @@ app.on('web-contents-created', (_event, contents) => {
 });
 
 function registerMediaKeys() {
-  const send = (action) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('media:key', action);
-    }
-  };
-  globalShortcut.register('MediaPlayPause', () => send('playpause'));
-  globalShortcut.register('MediaNextTrack', () => send('next'));
-  globalShortcut.register('MediaPreviousTrack', () => send('prev'));
+  globalShortcut.register('MediaPlayPause', () => sendMediaAction('playpause'));
+  globalShortcut.register('MediaNextTrack', () => sendMediaAction('next'));
+  globalShortcut.register('MediaPreviousTrack', () => sendMediaAction('prev'));
 }
 
 app.whenReady().then(async () => {
@@ -90,15 +181,28 @@ app.whenReady().then(async () => {
   }
 
   createMainWindow();
+  createTray();
   registerMediaKeys();
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createMainWindow();
+    } else {
+      showMainWindow();
+    }
   });
+});
+
+app.on('before-quit', () => {
+  isQuitting = true;
 });
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
 });
 
 app.on('window-all-closed', () => {

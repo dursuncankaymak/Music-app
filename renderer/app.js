@@ -111,6 +111,9 @@
     wv.setAttribute('partition', partitionFor(service));
     wv.setAttribute('allowpopups', '');
     wv.setAttribute('useragent', userAgent);
+    // Pencere tepsiye gizlendiğinde oynatıcı zamanlayıcıları kısılmasın;
+    // parça geçişleri ve otomatik oynatma arka planda da aksamadan sürsün.
+    wv.setAttribute('webpreferences', 'backgroundThrottling=no');
     wv.dataset.serviceId = service.id;
 
     wv.addEventListener('did-start-loading', () => {

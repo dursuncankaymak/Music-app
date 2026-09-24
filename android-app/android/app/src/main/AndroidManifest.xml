@@ -35,6 +35,18 @@
         </provider>
     </application>
 
+    <!-- Android 11+ paket görünürlüğü: yüklü servis uygulamalarını tespit edip
+         açabilmek için paket adları burada bildirilmelidir
+         (renderer/services.js içindeki androidPackage değerleri). -->
+    <queries>
+        <package android:name="com.google.android.apps.youtube.music" />
+        <package android:name="com.spotify.music" />
+        <package android:name="com.soundcloud.android" />
+        <package android:name="deezer.android.app" />
+        <package android:name="com.aspiro.tidal" />
+        <package android:name="com.apple.android.music" />
+    </queries>
+
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
