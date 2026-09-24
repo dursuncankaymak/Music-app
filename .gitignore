@@ -1,6 +1,9 @@
 node_modules/
 dist/
 out/
+
+# Android: servis listesi renderer/services.js'den kopyalanır (npm run sync)
+android-app/www/services.js
 *.log
 .DS_Store
 Thumbs.db

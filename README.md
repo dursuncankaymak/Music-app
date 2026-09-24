@@ -57,16 +57,48 @@ npm run dist:portable
 
 > **DRM notu:** `npm start` ile geliştirme modunda Widevine (Spotify vb. korumalı içerik) doğrudan çalışır çünkü castlabs'in hazır ikili dosyaları imzalıdır. Paketlenmiş bir sürümü **dağıtacaksan** exe'nin castlabs'in ücretsiz [EVS servisi](https://github.com/castlabs/electron-releases/wiki/EVS) ile imzalanması gerekir; kendi bilgisayarında kullanmak için buna genelde gerek olmaz.
 
+## 📱 Android sürümü
+
+`android-app/` klasöründe aynı tasarım diliyle hazırlanmış, [Capacitor](https://capacitorjs.com) tabanlı bir Android uygulaması bulunur. Masaüstünden farklı olarak servisleri uygulama içine gömmez; her servisi **Chrome Custom Tabs** ile açar. Bunun nedenleri:
+
+- Google, Android WebView içinden hesap girişini engeller; Spotify'ın web oynatıcısı da mobil tarayıcıları uygulamaya yönlendirir.
+- Custom Tabs, telefondaki **Chrome'un kendi oturumlarını** paylaşır: Chrome'da girişliysen uygulamada da girişlisindir, tekrar giriş gerekmez. DRM ve Google girişi sorunsuz çalışır.
+- Uygulama yine hiçbir hesap bilgisi tutmaz; sadece en son açtığın servisi hatırlayıp "Kaldığın yerden devam et" kartı gösterir.
+
+Servis listesi masaüstüyle ortaktır: `npm run sync`, `renderer/services.js` dosyasını Android web klasörüne kopyalar.
+
+### APK'yı almak
+
+**En kolay yol — GitHub Actions:** `android-app/` altında bir değişiklik push edildiğinde (veya Actions sekmesinden elle tetiklendiğinde) `.github/workflows/android.yml` bir debug APK derler. Actions → ilgili çalıştırma → *Artifacts* → `aria-music-debug-apk` dosyasını indirip telefonuna kur ("bilinmeyen kaynaklara izin ver" gerekebilir).
+
+**Yerelde derlemek** (Android Studio veya Android SDK + JDK 17 kurulu olmalı):
+
+```bash
+cd android-app
+npm install
+npm run build:debug      # APK: android/app/build/outputs/apk/debug/app-debug.apk
+npm run open             # ya da projeyi Android Studio'da aç
+```
+
+Play Store'a yüklemek için `npm run build:release` çıktısını kendi imzalama anahtarınla imzalaman gerekir.
+
 ## 🗂 Proje yapısı
 
 ```
 ├── main.js              # Electron ana süreç: pencere, medya tuşları, dış link yönlendirme
 ├── preload.js           # Güvenli IPC köprüsü (contextBridge)
-└── renderer/
-    ├── index.html       # Arayüz iskeleti (başlık çubuğu, kenar çubuğu, görünümler)
-    ├── styles.css       # Koyu tema ve tüm görsel tasarım
-    ├── services.js      # Servis tanımları (URL, renk, ikon, medya tuşu seçicileri)
-    └── app.js           # Arayüz mantığı: sekme yönetimi, webview'ler, kısayollar
+├── renderer/
+│   ├── index.html       # Arayüz iskeleti (başlık çubuğu, kenar çubuğu, görünümler)
+│   ├── styles.css       # Koyu tema ve tüm görsel tasarım
+│   ├── services.js      # Servis tanımları (URL, renk, ikon, medya tuşu seçicileri) — tek kaynak
+│   └── app.js           # Arayüz mantığı: sekme yönetimi, webview'ler, kısayollar
+├── android-app/
+│   ├── capacitor.config.json
+│   ├── www/             # Mobil arayüz (index.html, styles.css, app.js)
+│   ├── scripts/         # services.js senkronizasyonu
+│   └── android/         # Üretilen yerel Android projesi (Gradle)
+└── .github/workflows/
+    └── android.yml      # Her push'ta debug APK derleyen CI
 ```
 
 ## ➕ Yeni servis eklemek

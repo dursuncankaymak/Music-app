@@ -1,0 +1,58 @@
+name: Android APK
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "android-app/**"
+      - "renderer/services.js"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Debug APK derle
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android-app
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: Node kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: android-app/package-lock.json
+
+      - name: JDK 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Gradle önbelleği
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Bağımlılıkları yükle
+        run: npm ci
+
+      - name: Web varlıklarını Android projesine kopyala
+        run: npm run sync
+
+      - name: APK derle
+        run: ./gradlew assembleDebug --no-daemon
+        working-directory: android-app/android
+
+      - name: APK'yı yeniden adlandır
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk aria-music-debug.apk
+
+      - name: APK'yı yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: aria-music-debug-apk
+          path: android-app/aria-music-debug.apk
+          retention-days: 30

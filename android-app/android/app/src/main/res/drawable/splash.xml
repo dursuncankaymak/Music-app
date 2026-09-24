@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Açılış ekranı: koyu arka plan üzerinde ortalanmış uygulama simgesi -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/appBackground" />
+    <item
+        android:drawable="@drawable/ic_launcher_foreground"
+        android:gravity="center"
+        android:width="220dp"
+        android:height="220dp" />
+</layer-list>
