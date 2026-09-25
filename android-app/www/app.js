@@ -7,10 +7,28 @@
   const TOOLBAR_COLOR = '#0d0f16';
 
   // Capacitor'ın yerel köprüsü varsa eklentiler kullanılır; tarayıcıda test
-  // ederken servisler normal bir sekmede açılır.
-  const isNative = typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform();
-  const Browser = isNative ? Capacitor.registerPlugin('Browser') : null;
-  const AppLauncher = isNative ? Capacitor.registerPlugin('AppLauncher') : null;
+  // ederken servisler normal bir sekmede açılır. Eklenti çözümlenemezse
+  // arayüz yine de çizilir; yalnızca web'e düşülür.
+  const isNative = (() => {
+    try {
+      return typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform();
+    } catch {
+      return false;
+    }
+  })();
+
+  function resolvePlugin(name) {
+    if (!isNative) return null;
+    try {
+      if (typeof Capacitor.registerPlugin === 'function') return Capacitor.registerPlugin(name);
+      return (Capacitor.Plugins && Capacitor.Plugins[name]) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  const Browser = resolvePlugin('Browser');
+  const AppLauncher = resolvePlugin('AppLauncher');
 
   // Telefonda yüklü olduğu tespit edilen servis uygulamaları (service.id)
   const installedApps = new Set();

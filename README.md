@@ -67,7 +67,7 @@ npm run dist:portable
 
 Uygulama hiçbir hesap bilgisi tutmaz; sadece en son açtığın servisi hatırlayıp "Kaldığın yerden devam et" kartı gösterir.
 
-Servis listesi masaüstüyle ortaktır: `npm run sync`, `renderer/services.js` dosyasını Android web klasörüne kopyalar.
+Servis listesi masaüstüyle ortaktır: `npm run sync`, `renderer/services.js` dosyasını ve Capacitor çekirdeğinin tarayıcı paketini (`capacitor.js`) Android web klasörüne kopyalar.
 
 ### APK'yı almak
 

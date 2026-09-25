@@ -4,6 +4,7 @@ out/
 
 # Android: servis listesi renderer/services.js'den kopyalanır (npm run sync)
 android-app/www/services.js
+android-app/www/capacitor.js
 *.log
 .DS_Store
 Thumbs.db
