@@ -19,7 +19,7 @@ Uygulama yalnızca bir arayüzdür: müzik dosyası indirmez, hesap bilgisi sakl
 
 ## 🔐 Giriş ve oturumlar nasıl çalışıyor?
 
-Giriş, uygulamanın **içindeki görünümde**, ilgili servisin kendi resmî giriş sayfasında yapılır (uygulama kendini güncel bir Chrome olarak tanıttığı için Google girişi de sorunsuz çalışır). Şifren hiçbir zaman uygulamanın kodundan geçmez; doğrudan servisin sunucusuna gider. Uygulamanın kendi backend'i yoktur.
+Giriş, uygulamanın **içindeki görünümde**, ilgili servisin kendi resmî giriş sayfasında yapılır. Uygulama tarayıcı kimliğini (user agent) bilerek değiştirmez: Google, Chrome taklidi yapan gömülü tarayıcıları "bu tarayıcı güvenli olmayabilir" diyerek engeller; Electron'un kendi kimliğiyle giriş sorunsuz çalışır. "Google ile devam et" gibi açılır pencereli girişler de uygulama içinde, aynı oturumu paylaşan küçük bir pencerede açılır. Şifren hiçbir zaman uygulamanın kodundan geçmez; doğrudan servisin sunucusuna gider. Uygulamanın kendi backend'i yoktur.
 
 Oturum saklama iki modda çalışır — kenar çubuğunun altındaki **"Oturumları hatırla"** anahtarıyla seçilir:
 

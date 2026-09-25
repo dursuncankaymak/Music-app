@@ -15,10 +15,37 @@ const {
 } = electron;
 const path = require('path');
 
-// Web servislerinin (özellikle Google girişinin) Electron'u engellememesi için
-// güncel bir Chrome tarayıcısı gibi görünürüz.
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
+// Tarayıcı kimliği (user agent) bilerek DEĞİŞTİRİLMEZ: Google, Chrome taklidi
+// yapan gömülü tarayıcıları "bu tarayıcı güvenli olmayabilir" diyerek engelliyor;
+// Electron'un kendi kimliğiyle giriş sorunsuz çalışıyor (th-ch/youtube-music'in
+// varsayılan davranışıyla aynı).
+
+// Bu alan adlarından açılan açılır pencereler (ör. "Google ile devam et") sistem
+// tarayıcısına değil, uygulama içinde aynı oturumu paylaşan bir pencereye açılır;
+// aksi hâlde giriş tamamlansa da uygulamaya geri dönmez.
+const AUTH_POPUP_HOSTS = [
+  'accounts.google.com',
+  'accounts.youtube.com',
+  'www.facebook.com',
+  'facebook.com',
+  'appleid.apple.com',
+  'idmsa.apple.com',
+  'accounts.spotify.com',
+  'login.tidal.com',
+  'auth.tidal.com',
+  'connect.deezer.com',
+  'secure.soundcloud.com',
+  'api.soundcloud.com',
+];
+
+function isAuthPopupUrl(url) {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === 'https:' && AUTH_POPUP_HOSTS.some((h) => hostname === h);
+  } catch {
+    return false;
+  }
+}
 
 const TRAY_ICON = path.join(__dirname, 'assets', 'tray.png');
 const APP_ICON = path.join(__dirname, 'build', 'icon.png');
@@ -150,11 +177,23 @@ function createTray() {
 }
 
 // Her webview için ortak güvenlik/davranış kuralları:
-// - Yeni pencere açma istekleri (window.open, hedefli linkler) uygulama içinde
-//   yeni pencere oluşturmak yerine kullanıcının kendi tarayıcısında açılır.
+// - Giriş sağlayıcılarının açılır pencereleri uygulama içinde açılır (oturumu paylaşır).
+// - Diğer tüm yeni pencere istekleri kullanıcının kendi tarayıcısına yönlendirilir.
 app.on('web-contents-created', (_event, contents) => {
   if (contents.getType() === 'webview') {
     contents.setWindowOpenHandler(({ url }) => {
+      if (isAuthPopupUrl(url)) {
+        return {
+          action: 'allow',
+          overrideBrowserWindowOptions: {
+            width: 540,
+            height: 760,
+            autoHideMenuBar: true,
+            backgroundColor: '#0d0f16',
+            icon: APP_ICON,
+          },
+        };
+      }
       if (isSafeExternalUrl(url)) {
         shell.openExternal(url);
       }
@@ -230,8 +269,6 @@ ipcMain.handle('app:open-external', (_event, url) => {
   }
   return Promise.resolve();
 });
-
-ipcMain.handle('app:get-user-agent', () => USER_AGENT);
 
 // Verilen bölümlerin (partition) tüm oturum verisini (çerez, depolama, önbellek) siler.
 const PARTITION_RE = /^(persist:|inmemory-)[a-z0-9-]+$/;

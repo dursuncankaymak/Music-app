@@ -24,7 +24,6 @@
   const settings = loadSettings();
 
   // ---- Durum ----
-  let userAgent = '';
   let activeServiceId = null;
   const webviews = new Map(); // serviceId -> <webview>
 
@@ -110,7 +109,6 @@
     wv.setAttribute('src', service.url);
     wv.setAttribute('partition', partitionFor(service));
     wv.setAttribute('allowpopups', '');
-    wv.setAttribute('useragent', userAgent);
     // Pencere tepsiye gizlendiğinde oynatıcı zamanlayıcıları kısılmasın;
     // parça geçişleri ve otomatik oynatma arka planda da aksamadan sürsün.
     wv.setAttribute('webpreferences', 'backgroundThrottling=no');
@@ -317,7 +315,6 @@
 
   // ---- Başlat ----
   async function init() {
-    userAgent = await window.aria.getUserAgent();
     el.toggleRemember.checked = settings.rememberSessions;
     updatePrivacyNote();
     buildSidebar();

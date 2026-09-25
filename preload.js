@@ -8,7 +8,6 @@ contextBridge.exposeInMainWorld('aria', {
   close: () => ipcRenderer.send('window:close'),
 
   openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
-  getUserAgent: () => ipcRenderer.invoke('app:get-user-agent'),
   clearSessions: (partitions) => ipcRenderer.invoke('app:clear-sessions', partitions),
 
   onMaximizedState: (callback) => {
