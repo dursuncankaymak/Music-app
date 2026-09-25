@@ -40,7 +40,7 @@ jobs:
         run: npm version $env:APP_VERSION --no-git-tag-version
 
       - name: Uygulamayı paketle (klasör)
-        run: npx electron-builder --win --dir
+        run: npx electron-builder --win --dir --publish never
 
       - name: Widevine için EVS imzası (yalnızca EVS hesabı tanımlıysa)
         if: env.EVS_ACCOUNT != ''
@@ -54,7 +54,7 @@ jobs:
         run: echo "::warning::CASTLABS_EVS_ACCOUNT tanımlı değil; paket Widevine için imzalanmadı. Spotify/Apple Music/TIDAL DRM içeriği kurulu uygulamada çalmayabilir. Ayrıntı için README."
 
       - name: Kurulum ve taşınabilir exe üret
-        run: npx electron-builder --win nsis portable --prepackaged dist/win-unpacked
+        run: npx electron-builder --win nsis portable --prepackaged dist/win-unpacked --publish never
 
       - name: Çıktıları listele
         run: Get-ChildItem dist -Filter *.exe | Select-Object Name, Length
