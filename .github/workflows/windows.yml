@@ -1,0 +1,88 @@
+name: Windows Build
+
+on:
+  push:
+    branches: ["**"]
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Windows kurulum dosyası derle
+    runs-on: windows-latest
+    env:
+      # Her derleme yeni bir sürüm numarası alır (Windows "Uygulamalar" listesinde görünür)
+      APP_VERSION: 1.0.${{ github.run_number }}
+      # castlabs EVS hesabı (isteğe bağlı): tanımlıysa paket Widevine için imzalanır,
+      # böylece Spotify / Apple Music / TIDAL gibi DRM'li servisler kurulu uygulamada çalar.
+      EVS_ACCOUNT: ${{ secrets.CASTLABS_EVS_ACCOUNT }}
+      EVS_PASSWD: ${{ secrets.CASTLABS_EVS_PASSWD }}
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: Node kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Bağımlılıkları yükle (castlabs Electron dahil)
+        run: npm ci
+
+      - name: Sürüm numarasını ayarla
+        run: npm version $env:APP_VERSION --no-git-tag-version
+
+      - name: Uygulamayı paketle (klasör)
+        run: npx electron-builder --win --dir
+
+      - name: Widevine için EVS imzası (yalnızca EVS hesabı tanımlıysa)
+        if: env.EVS_ACCOUNT != ''
+        run: |
+          pip install --quiet castlabs-evs
+          python -m castlabs_evs.account -n reauth -A "$env:EVS_ACCOUNT" -p "$env:EVS_PASSWD"
+          python -m castlabs_evs.vmp sign-pkg dist/win-unpacked
+
+      - name: EVS imzası atlandı
+        if: env.EVS_ACCOUNT == ''
+        run: echo "::warning::CASTLABS_EVS_ACCOUNT tanımlı değil; paket Widevine için imzalanmadı. Spotify/Apple Music/TIDAL DRM içeriği kurulu uygulamada çalmayabilir. Ayrıntı için README."
+
+      - name: Kurulum ve taşınabilir exe üret
+        run: npx electron-builder --win nsis portable --prepackaged dist/win-unpacked
+
+      - name: Çıktıları listele
+        run: Get-ChildItem dist -Filter *.exe | Select-Object Name, Length
+
+      - name: Artifact olarak yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: aria-music-windows
+          path: dist/*.exe
+          retention-days: 30
+
+      - name: Releases sayfasına ekle
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: windows-v${{ env.APP_VERSION }}
+          target_commitish: ${{ github.sha }}
+          name: Aria Music Windows v${{ env.APP_VERSION }}
+          body: |
+            Otomatik derlenen Windows sürümü.
+
+            - **Aria-Music-Setup.exe** — kurulum sihirbazı (önerilen)
+            - **Aria-Music-Portable.exe** — kurulum gerektirmeyen tek dosya
+
+            İlk açılışta Windows SmartScreen "tanınmayan uygulama" uyarısı verebilir:
+            *Ek bilgi → Yine de çalıştır*.
+
+            Kaynak: `${{ github.ref_name }}` @ ${{ github.sha }}
+          files: |
+            dist/Aria-Music-Setup.exe
+            dist/Aria-Music-Portable.exe
+          fail_on_unmatched_files: true

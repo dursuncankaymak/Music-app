@@ -1,7 +1,6 @@
 'use strict';
 
-// Uygulamada listelenen müzik servisleri (masaüstü ve Android için tek kaynak).
-// androidPackage: Android'de yüklüyse açılacak yerel uygulamanın paket adı.
+// Uygulamada listelenen müzik servisleri.
 // controls: medya tuşları için her servisin web oynatıcısındaki buton seçicileri.
 // Seçici bulunamazsa app.js genel bir <video>/<audio> yedeğine düşer.
 const SERVICES = [
@@ -9,7 +8,6 @@ const SERVICES = [
     id: 'youtube-music',
     name: 'YouTube Music',
     url: 'https://music.youtube.com',
-    androidPackage: 'com.google.android.apps.youtube.music',
     color: '#ff0033',
     icon: `<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M10 8.8v6.4l5.4-3.2L10 8.8z" fill="currentColor"/></svg>`,
     controls: {
@@ -22,7 +20,6 @@ const SERVICES = [
     id: 'spotify',
     name: 'Spotify',
     url: 'https://open.spotify.com',
-    androidPackage: 'com.spotify.music',
     color: '#1ed760',
     icon: `<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M7.5 10.2c3-.9 6.3-.7 9 .9M8 13c2.4-.7 5-.5 7.2.8M8.6 15.6c1.8-.5 3.7-.4 5.4.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
     controls: {
@@ -35,7 +32,6 @@ const SERVICES = [
     id: 'soundcloud',
     name: 'SoundCloud',
     url: 'https://soundcloud.com',
-    androidPackage: 'com.soundcloud.android',
     color: '#ff5500',
     icon: `<svg viewBox="0 0 24 24" fill="none"><path d="M4 15.5v-3M6.5 16.5v-6M9 16.5V8.5M11.5 16.5v-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M13.5 16.5h4.2a2.8 2.8 0 1 0-.4-5.6 4.3 4.3 0 0 0-3.8-3.4v9z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
     controls: {
@@ -48,7 +44,6 @@ const SERVICES = [
     id: 'deezer',
     name: 'Deezer',
     url: 'https://www.deezer.com',
-    androidPackage: 'deezer.android.app',
     color: '#a238ff',
     icon: `<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="14" width="4" height="3" rx="0.5" fill="currentColor"/><rect x="10" y="11" width="4" height="6" rx="0.5" fill="currentColor"/><rect x="16" y="7" width="4" height="10" rx="0.5" fill="currentColor"/></svg>`,
     controls: {
@@ -61,7 +56,6 @@ const SERVICES = [
     id: 'tidal',
     name: 'TIDAL',
     url: 'https://listen.tidal.com',
-    androidPackage: 'com.aspiro.tidal',
     color: '#33ffee',
     icon: `<svg viewBox="0 0 24 24" fill="none"><path d="M8 6l4 4 4-4 4 4-4 4-4-4-4 4-4-4 4-4zM12 14l4 4-4 4-4-4 4-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`,
     controls: {
@@ -74,7 +68,6 @@ const SERVICES = [
     id: 'apple-music',
     name: 'Apple Music',
     url: 'https://music.apple.com',
-    androidPackage: 'com.apple.android.music',
     color: '#fa2d48',
     icon: `<svg viewBox="0 0 24 24" fill="none"><path d="M9 17.5V7.2a1 1 0 0 1 .8-1l7-1.4a1 1 0 0 1 1.2 1v9.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.8" cy="17.5" r="2.2" stroke="currentColor" stroke-width="1.8"/><circle cx="15.8" cy="15" r="2.2" stroke="currentColor" stroke-width="1.8"/></svg>`,
     controls: {

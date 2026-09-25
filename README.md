@@ -44,71 +44,56 @@ npm install
 npm start
 ```
 
-## 📦 Windows için paketleme
+## 📦 Windows kurulum dosyası
+
+**En kolay yol — Releases sayfası:** Depoya her push'ta `.github/workflows/windows.yml` GitHub'ın Windows sunucusunda uygulamayı derler ve **Releases** sayfasına iki dosya ekler:
+
+| Dosya | Ne işe yarar |
+|---|---|
+| `Aria-Music-Setup.exe` | Kurulum sihirbazı; Başlat menüsüne ekler (önerilen) |
+| `Aria-Music-Portable.exe` | Kurulum gerektirmeyen tek dosya; USB'de taşınabilir |
+
+En yeni sürümün sabit indirme bağlantıları:
+
+```
+https://github.com/dursuncankaymak/Music-app/releases/latest/download/Aria-Music-Setup.exe
+https://github.com/dursuncankaymak/Music-app/releases/latest/download/Aria-Music-Portable.exe
+```
+
+İlk açılışta Windows SmartScreen "tanınmayan uygulama" uyarısı verebilir (uygulama bir kod imzalama sertifikasıyla imzalı değildir): *Ek bilgi → Yine de çalıştır*.
+
+**Yerelde derlemek:**
 
 ```bash
-# Kurulum sihirbazı (NSIS) + taşınabilir exe
-npm run dist
-
-# Yalnızca taşınabilir tek exe
-npm run dist:portable
-```
-
-Çıktılar `dist/` klasörüne yazılır.
-
-> **DRM notu:** `npm start` ile geliştirme modunda Widevine (Spotify vb. korumalı içerik) doğrudan çalışır çünkü castlabs'in hazır ikili dosyaları imzalıdır. Paketlenmiş bir sürümü **dağıtacaksan** exe'nin castlabs'in ücretsiz [EVS servisi](https://github.com/castlabs/electron-releases/wiki/EVS) ile imzalanması gerekir; kendi bilgisayarında kullanmak için buna genelde gerek olmaz.
-
-## 📱 Android sürümü
-
-`android-app/` klasöründe aynı tasarım diliyle hazırlanmış, [Capacitor](https://capacitorjs.com) tabanlı bir Android uygulaması bulunur. Masaüstünden farklı olarak servisleri uygulama içine gömmez:
-
-1. **Servisin kendi uygulaması telefonda yüklüyse onu açar** (kartta "Uygulama" rozeti görünür). Arka planda çalma, bildirim kontrolleri ve kilit ekranı desteği zaten o uygulamalarda vardır; web sürümlerinde bunlar servislerin kendisi tarafından kısıtlanır (YouTube Music web'de arka plan çalma yalnızca Premium'a açıktır, Spotify'ın web oynatıcısı mobilde çalışmaz).
-2. **Yüklü değilse Chrome Custom Tabs ile açar.** Custom Tabs, telefondaki Chrome'un kendi oturumlarını paylaşır: Chrome'da girişliysen tekrar giriş gerekmez; Google girişi ve DRM sorunsuz çalışır (Android WebView'de Google girişi engellendiği için gömülü WebView tercih edilmedi).
-
-Uygulama hiçbir hesap bilgisi tutmaz; sadece en son açtığın servisi hatırlayıp "Kaldığın yerden devam et" kartı gösterir.
-
-Servis listesi masaüstüyle ortaktır: `npm run sync`, `renderer/services.js` dosyasını ve Capacitor çekirdeğinin tarayıcı paketini (`capacitor.js`) Android web klasörüne kopyalar.
-
-### APK'yı almak
-
-**En kolay yol — Releases sayfası:** `android-app/` altında bir değişiklik push edildiğinde (veya Actions sekmesinden elle tetiklendiğinde) `.github/workflows/android.yml` bir APK derler ve deponun **Releases** sayfasına `aria-music.apk` olarak ekler. En yeni sürümün sabit indirme bağlantısı:
-
-```
-https://github.com/dursuncankaymak/Music-app/releases/latest/download/aria-music.apk
-```
-
-Telefonda bu bağlantıyı açıp APK'yı kur ("bilinmeyen kaynaklara izin ver" gerekebilir). Her derleme bir öncekinin üstüne güncelleme olarak kurulur; uygulamayı silmene gerek yok.
-
-> **İmzalama notu:** Depoda `android-app/android/app/debug.keystore` adında bir *debug* imzalama anahtarı bulunur. Bu sayede her CI derlemesi aynı anahtarla imzalanır ve Android yeni APK'yı güncelleme olarak kabul eder (aksi hâlde her derlemede rastgele anahtar üretilir ve "uygulama yüklenemedi" hatası alınır). Bu anahtar yalnızca kişisel kullanım içindir; Play Store'a yüklerken kendi gizli anahtarınla imzalanmış bir release derlemesi kullanmalısın.
-
-**Yerelde derlemek** (Android Studio veya Android SDK + JDK 17 kurulu olmalı):
-
-```bash
-cd android-app
 npm install
-npm run build:debug      # APK: android/app/build/outputs/apk/debug/app-debug.apk
-npm run open             # ya da projeyi Android Studio'da aç
+npm run dist            # dist/ altında Setup + Portable exe
 ```
 
-Play Store'a yüklemek için `npm run build:release` çıktısını kendi imzalama anahtarınla imzalaman gerekir.
+### 🔐 DRM (Widevine) ve EVS imzası
+
+`npm start` ile çalıştırınca Spotify / Apple Music / TIDAL'ın korumalı içeriği doğrudan çalar; castlabs'in geliştirme ikilileri Widevine için imzalıdır. **Paketlenmiş exe'de** ise Widevine'ın yüklenebilmesi için paketin castlabs'in ücretsiz [EVS](https://github.com/castlabs/electron-releases/wiki/EVS) servisiyle imzalanması gerekir; aksi hâlde bu üç servis "korumalı içerik oynatılamıyor" der (YouTube Music, SoundCloud ve Deezer etkilenmez).
+
+CI bunu otomatik yapar, tek yapman gereken hesap açıp iki gizli değer tanımlamak:
+
+1. `pip install castlabs-evs` → `python -m castlabs_evs.account signup` ile ücretsiz hesap aç.
+2. GitHub'da depo → **Settings → Secrets and variables → Actions → New repository secret**:
+   `CASTLABS_EVS_ACCOUNT` (hesap adı) ve `CASTLABS_EVS_PASSWD` (şifre).
+3. Actions sekmesinden **Windows Build**'i yeniden çalıştır. Bu andan itibaren her sürüm imzalı çıkar.
 
 ## 🗂 Proje yapısı
 
 ```
-├── main.js              # Electron ana süreç: pencere, medya tuşları, dış link yönlendirme
+├── main.js              # Electron ana süreç: pencere, tepsi, medya tuşları, dış link yönlendirme
 ├── preload.js           # Güvenli IPC köprüsü (contextBridge)
 ├── renderer/
 │   ├── index.html       # Arayüz iskeleti (başlık çubuğu, kenar çubuğu, görünümler)
 │   ├── styles.css       # Koyu tema ve tüm görsel tasarım
-│   ├── services.js      # Servis tanımları (URL, renk, ikon, medya tuşu seçicileri) — tek kaynak
+│   ├── services.js      # Servis tanımları (URL, renk, ikon, medya tuşu seçicileri)
 │   └── app.js           # Arayüz mantığı: sekme yönetimi, webview'ler, kısayollar
-├── android-app/
-│   ├── capacitor.config.json
-│   ├── www/             # Mobil arayüz (index.html, styles.css, app.js)
-│   ├── scripts/         # services.js senkronizasyonu
-│   └── android/         # Üretilen yerel Android projesi (Gradle)
+├── assets/tray.png      # Sistem tepsisi simgesi
+├── build/icon.png       # Uygulama simgesi (electron-builder .ico'yu buradan üretir)
 └── .github/workflows/
-    └── android.yml      # Her push'ta debug APK derleyen CI
+    └── windows.yml      # Her push'ta Windows Setup + Portable exe üretip Releases'a ekleyen CI
 ```
 
 ## ➕ Yeni servis eklemek
