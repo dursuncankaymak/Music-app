@@ -13,7 +13,27 @@ const {
   nativeImage,
   webContents,
 } = electron;
+const fs = require('fs');
 const path = require('path');
+
+// Ana süreç ayarları: tarayıcı motoru başlamadan önce okunması gerekenler.
+const SETTINGS_FILE = path.join(app.getPath('userData'), 'aria-settings.json');
+const mainSettings = { hardwareAcceleration: true };
+try {
+  Object.assign(mainSettings, JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')));
+} catch { /* ilk açılış: varsayılanlar */ }
+
+function saveMainSettings() {
+  try {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(mainSettings, null, 2));
+  } catch (err) {
+    console.error('Ayarlar kaydedilemedi:', err);
+  }
+}
+
+// Donanım hızlandırma kapalıyken GPU süreci çok daha az bellek kullanır;
+// karşılığında sayfa çizimi işlemciye kalır.
+if (!mainSettings.hardwareAcceleration) app.disableHardwareAcceleration();
 
 // Tarayıcı kimliği (user agent) bilerek DEĞİŞTİRİLMEZ: Google, Chrome taklidi
 // yapan gömülü tarayıcıları "bu tarayıcı güvenli olmayabilir" diyerek engelliyor;
@@ -136,6 +156,19 @@ function createMainWindow() {
 
   mainWindow.once('ready-to-show', () => mainWindow.show());
 
+  // Pencere görünürlüğü arayüze bildirilir: uyku modu, pencere gizliyken sessiz
+  // kalan aktif servisi de uyutabilsin. (backgroundThrottling kapalı olduğu için
+  // sayfadaki document.hidden buna güvenilir bir kaynak değil.)
+  const sendVisibility = () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(
+        'window:visibility',
+        mainWindow.isVisible() && !mainWindow.isMinimized()
+      );
+    }
+  };
+  for (const evt of ['show', 'hide', 'minimize', 'restore']) mainWindow.on(evt, sendVisibility);
+
   mainWindow.on('maximize', () => {
     mainWindow.webContents.send('window:maximized-state', true);
   });
@@ -179,6 +212,11 @@ function createTray() {
 // Her webview için ortak güvenlik/davranış kuralları:
 // - Giriş sağlayıcılarının açılır pencereleri uygulama içinde açılır (oturumu paylaşır).
 // - Diğer tüm yeni pencere istekleri kullanıcının kendi tarayıcısına yönlendirilir.
+// Yazım denetimi servislerde gereksiz: kapalıyken sözlük indirilmez ve belleğe yüklenmez.
+app.on('session-created', (ses) => {
+  ses.setSpellCheckerEnabled(false);
+});
+
 app.on('web-contents-created', (_event, contents) => {
   if (contents.getType() === 'webview') {
     contents.setWindowOpenHandler(({ url }) => {
@@ -268,6 +306,18 @@ ipcMain.handle('app:open-external', (_event, url) => {
     return shell.openExternal(url);
   }
   return Promise.resolve();
+});
+
+ipcMain.handle('app:get-hardware-acceleration', () => mainSettings.hardwareAcceleration);
+
+ipcMain.handle('app:set-hardware-acceleration', (_event, enabled) => {
+  mainSettings.hardwareAcceleration = Boolean(enabled);
+  saveMainSettings();
+});
+
+ipcMain.on('app:relaunch', () => {
+  app.relaunch();
+  quitApp();
 });
 
 // Verilen bölümlerin (partition) tüm oturum verisini (çerez, depolama, önbellek) siler.

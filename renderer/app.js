@@ -5,7 +5,9 @@
 (() => {
   // ---- Ayarlar ----
   const SETTINGS_KEY = 'aria.settings';
-  const defaultSettings = { rememberSessions: true };
+  // memorySaver: arka planda sessiz kalan servisler sleepAfterMinutes sonra uyutulur
+  // (sayfa kapatılır, belleği boşalır; oturum korunur, tıklayınca yeniden yüklenir).
+  const defaultSettings = { rememberSessions: true, memorySaver: true, sleepAfterMinutes: 5 };
 
   function loadSettings() {
     try {
@@ -25,7 +27,9 @@
 
   // ---- Durum ----
   let activeServiceId = null;
+  let windowVisible = true;
   const webviews = new Map(); // serviceId -> <webview>
+  const lastUsedAt = new Map(); // serviceId -> son görüntülenme / ses çalma zamanı
 
   // ---- Element referansları ----
   const el = {
@@ -49,6 +53,8 @@
     toggleRemember: document.getElementById('toggle-remember'),
     btnClearSessions: document.getElementById('btn-clear-sessions'),
     privacyNote: document.getElementById('privacy-note'),
+    toggleMemorySaver: document.getElementById('toggle-memory-saver'),
+    toggleHwAccel: document.getElementById('toggle-hw-accel'),
   };
 
   const getService = (id) => SERVICES.find((s) => s.id === id);
@@ -114,6 +120,9 @@
     wv.setAttribute('webpreferences', 'backgroundThrottling=no');
     wv.dataset.serviceId = service.id;
 
+    wv.addEventListener('media-started-playing', () => touch(service.id));
+    wv.addEventListener('media-paused', () => touch(service.id));
+
     wv.addEventListener('did-start-loading', () => {
       if (service.id === activeServiceId) el.loading.classList.remove('hidden');
     });
@@ -157,7 +166,10 @@
     const service = getService(serviceId);
     if (!service) return;
 
+    // Bırakılan servisin uyku sayacı şimdi başlar
+    if (activeServiceId && activeServiceId !== serviceId) touch(activeServiceId);
     activeServiceId = serviceId;
+    touch(serviceId);
     el.errorScreen.classList.add('hidden');
 
     // Kenar çubuğu aktiflik durumu
@@ -170,8 +182,9 @@
     el.toolbar.classList.remove('hidden');
     el.titlebarService.textContent = service.name;
 
-    // Webview'i getir (yoksa tembel oluştur)
+    // Webview'i getir (yoksa ya da uyuyorsa oluştur)
     const wv = webviews.get(serviceId) || createWebview(service);
+    setSleeping(serviceId, false);
     webviews.forEach((view) => view.classList.remove('active'));
     wv.classList.add('active');
 
@@ -201,6 +214,68 @@
     el.navBack.disabled = !canBack;
     el.navForward.disabled = !canForward;
   }
+
+  // ---- Uyku modu ----
+  function touch(serviceId) {
+    lastUsedAt.set(serviceId, Date.now());
+  }
+
+  function isAudible(wv) {
+    try {
+      return wv.isCurrentlyAudible();
+    } catch {
+      return false;
+    }
+  }
+
+  function setSleeping(serviceId, sleeping) {
+    const item = sidebarItem(serviceId);
+    if (!item) return;
+    const service = getService(serviceId);
+    const index = SERVICES.indexOf(service);
+    item.classList.toggle('sleeping', sleeping);
+    item.title = sleeping
+      ? `${service.name} — uyuyor, belleği boşaltıldı. Tıklayınca yeniden açılır.`
+      : `${service.name}  (Ctrl+${index + 1})`;
+  }
+
+  // Servisin sayfasını kapatır: süreci sonlanır ve belleği işletim sistemine döner.
+  // Oturum (giriş) bölümde kaldığı için yeniden açıldığında giriş yapmak gerekmez.
+  function sleepService(serviceId) {
+    const wv = webviews.get(serviceId);
+    if (!wv) return;
+    wv.remove();
+    webviews.delete(serviceId);
+    lastUsedAt.delete(serviceId);
+    sidebarItem(serviceId)?.classList.remove('loaded');
+    setSleeping(serviceId, true);
+  }
+
+  function checkIdleServices() {
+    if (!settings.memorySaver) return;
+    const limit = settings.sleepAfterMinutes * 60 * 1000;
+    const now = Date.now();
+    webviews.forEach((wv, serviceId) => {
+      const onScreen = serviceId === activeServiceId && windowVisible;
+      if (onScreen || isAudible(wv)) {
+        touch(serviceId);
+      } else if (now - (lastUsedAt.get(serviceId) ?? now) >= limit) {
+        sleepService(serviceId);
+      }
+    });
+  }
+
+  setInterval(checkIdleServices, 30 * 1000);
+
+  window.aria.onWindowVisibility((visible) => {
+    windowVisible = visible;
+    if (!visible) {
+      if (activeServiceId) touch(activeServiceId);
+      return;
+    }
+    // Pencere gizliyken uyutulan aktif servis, pencere açılınca uyanır
+    if (activeServiceId && !webviews.has(activeServiceId)) activateService(activeServiceId);
+  });
 
   // ---- Araç çubuğu ----
   el.navBack.addEventListener('click', () => {
@@ -245,8 +320,10 @@
   function rebuildWebviews() {
     webviews.forEach((wv) => wv.remove());
     webviews.clear();
+    lastUsedAt.clear();
     el.serviceList.querySelectorAll('.service-item').forEach((item) => {
       item.classList.remove('loaded');
+      setSleeping(item.dataset.serviceId, false);
     });
     if (activeServiceId) activateService(activeServiceId);
   }
@@ -256,6 +333,20 @@
     saveSettings();
     updatePrivacyNote();
     rebuildWebviews();
+  });
+
+  el.toggleMemorySaver.addEventListener('change', () => {
+    settings.memorySaver = el.toggleMemorySaver.checked;
+    saveSettings();
+    if (settings.memorySaver) webviews.forEach((_wv, serviceId) => touch(serviceId));
+  });
+
+  el.toggleHwAccel.addEventListener('change', async () => {
+    await window.aria.setHardwareAcceleration(el.toggleHwAccel.checked);
+    const now = window.confirm(
+      'Bu ayar uygulama yeniden başlatılınca geçerli olur. Şimdi yeniden başlatılsın mı?'
+    );
+    if (now) window.aria.relaunch();
   });
 
   el.btnClearSessions.addEventListener('click', async () => {
@@ -295,7 +386,12 @@
   window.aria.onMediaKey((action) => {
     const wv = getActiveWebview();
     const service = getService(activeServiceId);
-    if (!wv || !service) return;
+    if (!service) return;
+    if (!wv) {
+      // Aktif servis uyuyorsa medya tuşu onu uyandırır
+      activateService(activeServiceId);
+      return;
+    }
     const selectors = service.controls ? service.controls[action] : [];
     try {
       wv.executeJavaScript(buildMediaScript(selectors, action)).catch(() => {});
@@ -316,6 +412,8 @@
   // ---- Başlat ----
   async function init() {
     el.toggleRemember.checked = settings.rememberSessions;
+    el.toggleMemorySaver.checked = settings.memorySaver;
+    el.toggleHwAccel.checked = await window.aria.getHardwareAcceleration();
     updatePrivacyNote();
     buildSidebar();
     buildHomeCards();

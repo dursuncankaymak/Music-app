@@ -55,6 +55,26 @@
             <span class="switch-track"></span>
           </span>
         </label>
+        <label class="setting-row" title="Arka planda sessiz kalan servisler 5 dakika sonra uyutulur ve belleği boşaltılır. Çalan servis asla uyutulmaz; uyuyan servis tıklayınca yeniden açılır (girişin korunur).">
+          <span class="setting-label">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+            Uyku modu
+          </span>
+          <span class="switch">
+            <input type="checkbox" id="toggle-memory-saver" />
+            <span class="switch-track"></span>
+          </span>
+        </label>
+        <label class="setting-row" title="Kapatmak ekran kartı (GPU) belleğini azaltır, karşılığında işlemci kullanımı biraz artar. Yeniden başlatma gerekir.">
+          <span class="setting-label">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="6" y="6" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M10 10h4v4h-4zM9 3v3m6-3v3M9 18v3m6-3v3M3 9h3m-3 6h3m12-6h3m-3 6h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            GPU hızlandırma
+          </span>
+          <span class="switch">
+            <input type="checkbox" id="toggle-hw-accel" />
+            <span class="switch-track"></span>
+          </span>
+        </label>
         <button id="btn-clear-sessions" class="ghost-btn" title="Tüm servislerdeki girişleri, çerezleri ve önbelleği siler">
           <svg viewBox="0 0 24 24" fill="none"><path d="M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7M8 7l.7 11a1.5 1.5 0 0 0 1.5 1.4h3.6a1.5 1.5 0 0 0 1.5-1.4L16 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span>Oturumları temizle</span>

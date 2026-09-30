@@ -11,6 +11,7 @@ Uygulama yalnızca bir arayüzdür: müzik dosyası indirmez, hesap bilgisi sakl
 - **Girişler hatırlanır** — bir kere giriş yaparsın, uygulama her açılışta seni hatırlar (istersen kapatılabilir, aşağıya bak)
 - **DRM desteği** — Widevine içeren [castlabs Electron](https://github.com/castlabs/electron-releases) sayesinde Spotify, Apple Music ve TIDAL'daki korumalı içerik de çalar
 - **Harici linkler sistem tarayıcısında** — servislerin açmak istediği yeni pencereler/dış bağlantılar Windows'taki varsayılan tarayıcında açılır
+- **Uyku modu** — arka planda sessiz kalan servisler 5 dakika sonra uyutulur ve belleği boşaltılır (Chrome'daki Bellek Tasarrufu gibi); çalan servis asla uyutulmaz
 - **Arka planda çalmaya devam eder** — pencereyi kapattığında müzik çalıyorsa uygulama sistem tepsisine (saatin yanına) küçülür ve çalmayı sürdürür; tepsi menüsünden oynat/duraklat, sonraki/önceki parça ve çıkış yapılabilir. Müzik çalmıyorsa X normal şekilde kapatır.
 - **Medya tuşları** — klavyendeki ▶⏸ / ⏭ / ⏮ tuşları aktif servisi kontrol eder
 - **Klavye kısayolları** — `Ctrl+1` … `Ctrl+6` ile servisler arasında geçiş
@@ -31,6 +32,15 @@ Oturum saklama iki modda çalışır — kenar çubuğunun altındaki **"Oturuml
 Kenar çubuğundaki **"Oturumları temizle"** butonu tüm servislerdeki girişleri, çerezleri ve önbelleği tek tıkla siler.
 
 Servislerin dışarı açmak istediği her bağlantı (ör. "tarayıcıda aç", ödeme sayfaları) otomatik olarak **sistem tarayıcısına** yönlendirilir.
+
+## 🧠 Bellek kullanımı
+
+Uygulamanın asıl bellek tüketicisi servis sayfalarının kendisidir (her biri ayrı bir Chromium sürecidir). Bunu azaltmak için kenar çubuğunun altında iki ayar bulunur:
+
+- **Uyku modu** (varsayılan açık): Arka planda sessiz kalan bir servis 5 dakika sonra uyutulur: sayfası kapatılır ve belleği işletim sistemine geri verilir. Kenar çubuğunda noktası içi boş görünür; tıklayınca yeniden açılır ve oturumun korunduğu için giriş gerekmez. Pencere tepsiye gizliyken sessiz duran aktif servis de uyutulur; pencere açılınca kendiliğinden uyanır. Ses çalan servis hiçbir koşulda uyutulmaz.
+- **GPU hızlandırma** (varsayılan açık): Kapatıldığında ekran kartı (GPU) sürecinin belleği azalır, karşılığında çizim işlemciye kalır; müzik videolarında işlemci kullanımı artabilir. Yeniden başlatma gerektirir.
+
+Ölçüm (Linux'ta, sahte servis sayfalarıyla, PSS; Windows Görev Yöneticisi değerleri farklıdır): üç servis açıldıktan sonra 642 MB → uyku moduyla 521 MB, pencere tepsiye gizliyken 398 MB.
 
 ## 🚀 Kurulum ve Çalıştırma
 

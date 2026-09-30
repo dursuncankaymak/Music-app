@@ -232,6 +232,17 @@ body.maximized .titlebar-btn .icon-restore { display: block; }
   opacity: 1;
 }
 
+/* Uyuyan servis: içi boş nokta, soluk ikon */
+.service-item.sleeping .service-live-dot {
+  opacity: 1;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--service-color, var(--text-dim));
+}
+
+.service-item.sleeping .service-icon {
+  opacity: 0.55;
+}
+
 .sidebar-footer {
   margin-top: auto;
   padding-top: 12px;
