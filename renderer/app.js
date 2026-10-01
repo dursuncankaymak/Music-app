@@ -53,6 +53,7 @@
     toggleRemember: document.getElementById('toggle-remember'),
     btnClearSessions: document.getElementById('btn-clear-sessions'),
     privacyNote: document.getElementById('privacy-note'),
+    homeSub: document.getElementById('home-sub'),
     toggleMemorySaver: document.getElementById('toggle-memory-saver'),
     toggleHwAccel: document.getElementById('toggle-hw-accel'),
   };
@@ -314,6 +315,9 @@
     el.privacyNote.textContent = settings.rememberSessions
       ? 'Girişlerin bu bilgisayarda şifreli olarak saklanır ve her açılışta hatırlanır.'
       : 'Oturumlar yalnızca bellekte tutulur; uygulama kapanınca tamamen silinir.';
+    el.homeSub.textContent = settings.rememberSessions
+      ? 'Bir servis seç ve dinlemeye başla. Bir kez giriş yapman yeterli — uygulama seni her açılışta hatırlar.'
+      : 'Bir servis seç ve dinlemeye başla. Oturumun yalnızca bellekte tutulur — uygulama kapanınca hiçbir iz kalmaz.';
   }
 
   // Tüm webview'leri yıkıp aktif servisi yeni bölüm ayarıyla yeniden açar.

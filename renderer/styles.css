@@ -431,11 +431,12 @@ body.maximized .titlebar-btn .icon-restore { display: block; }
 
 /* ---- Karşılama ekranı ---- */
 #home {
-  flex: 1;
+  /* #views ile alanı paylaşmasın: tüm içerik alanını kaplayan katman */
+  position: absolute;
+  inset: 0;
+  z-index: 4;
   overflow-y: auto;
   display: flex;
-  align-items: center;
-  justify-content: center;
   background:
     radial-gradient(ellipse 60% 45% at 20% 0%, rgba(124, 92, 255, 0.14), transparent),
     radial-gradient(ellipse 55% 40% at 85% 100%, rgba(0, 212, 255, 0.10), transparent),
@@ -443,6 +444,8 @@ body.maximized .titlebar-btn .icon-restore { display: block; }
 }
 
 .home-inner {
+  /* margin:auto küçük pencerede taşan üst kısmın kırpılmasını önler */
+  margin: auto;
   max-width: 720px;
   padding: 40px 32px;
   text-align: center;
