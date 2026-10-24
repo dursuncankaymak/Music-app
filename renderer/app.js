@@ -30,6 +30,9 @@
   let windowVisible = true;
   const webviews = new Map(); // serviceId -> <webview>
   const lastUsedAt = new Map(); // serviceId -> son görüntülenme / ses çalma zamanı
+  // En son müzik çalan servis. Duraklatılmış olsa bile uyutulmaz ve medya tuşları
+  // (ekranda hangi servis açık olursa olsun) onu kontrol eder — masaüstü oynatıcılar gibi.
+  let mediaOwnerId = null;
 
   // ---- Element referansları ----
   const el = {
@@ -111,6 +114,17 @@
     return settings.rememberSessions ? `persist:${service.id}` : `inmemory-${service.id}`;
   }
 
+  // Servis sayfasını, ekrandaki görünümü değiştirmeden (arka planda) yeniden açar.
+  function wakeService(serviceId) {
+    const service = getService(serviceId);
+    if (!service) return null;
+    const wv = webviews.get(serviceId) || createWebview(service);
+    setSleeping(serviceId, false);
+    touch(serviceId);
+    if (serviceId === activeServiceId) wv.classList.add('active');
+    return wv;
+  }
+
   function createWebview(service) {
     const wv = document.createElement('webview');
     wv.setAttribute('src', service.url);
@@ -121,8 +135,20 @@
     wv.setAttribute('webpreferences', 'backgroundThrottling=no');
     wv.dataset.serviceId = service.id;
 
-    wv.addEventListener('media-started-playing', () => touch(service.id));
+    wv.addEventListener('media-started-playing', () => {
+      mediaOwnerId = service.id;
+      touch(service.id);
+    });
     wv.addEventListener('media-paused', () => touch(service.id));
+
+    // Sayfanın süreci çökerse (ör. bellek yetersizliği) boş görünümde kalmasın.
+    wv.addEventListener('render-process-gone', (e) => {
+      const reason = e.details?.reason || e.reason;
+      if (reason === 'clean-exit' || !wv.isConnected) return;
+      setTimeout(() => {
+        try { if (wv.isConnected) wv.reload(); } catch { /* hazır değil */ }
+      }, 1000);
+    });
 
     wv.addEventListener('did-start-loading', () => {
       if (service.id === activeServiceId) el.loading.classList.remove('hidden');
@@ -258,7 +284,7 @@
     const now = Date.now();
     webviews.forEach((wv, serviceId) => {
       const onScreen = serviceId === activeServiceId && windowVisible;
-      if (onScreen || isAudible(wv)) {
+      if (onScreen || isAudible(wv) || serviceId === mediaOwnerId) {
         touch(serviceId);
       } else if (now - (lastUsedAt.get(serviceId) ?? now) >= limit) {
         sleepService(serviceId);
@@ -387,19 +413,46 @@
     `;
   }
 
-  window.aria.onMediaKey((action) => {
-    const wv = getActiveWebview();
-    const service = getService(activeServiceId);
-    if (!service) return;
-    if (!wv) {
-      // Aktif servis uyuyorsa medya tuşu onu uyandırır
-      activateService(activeServiceId);
-      return;
-    }
+  // Tuş, en son müzik çalan servise gider; hiç çalınmadıysa ekrandaki servise.
+  // O servis uyuyorsa (ya da sayfası yeniden yükleniyorsa) arka planda açılır ve tuş,
+  // oynatıcı hazır olunca uygulanır — tuşa basış boşa gitmez.
+  const MEDIA_KEY_TIMEOUT_MS = 20000;
+  let pendingMediaKey = null;
+
+  async function tryMediaAction(wv, service, action) {
     const selectors = service.controls ? service.controls[action] : [];
     try {
-      wv.executeJavaScript(buildMediaScript(selectors, action)).catch(() => {});
-    } catch { /* hazır değil */ }
+      return await wv.executeJavaScript(buildMediaScript(selectors, action));
+    } catch {
+      return false; // sayfa henüz hazır değil
+    }
+  }
+
+  async function runMediaAction(serviceId, action) {
+    const service = getService(serviceId);
+    if (!service) return;
+    let wv = webviews.get(serviceId);
+    const woke = !wv;
+    if (woke) wv = wakeService(serviceId);
+    if (!wv) return;
+
+    if (!woke && !safeIsLoading(wv) && (await tryMediaAction(wv, service, action))) return;
+
+    // Son basılan tuş geçerlidir; önceki bekleyen tuş iptal olur.
+    const token = {};
+    pendingMediaKey = token;
+    const deadline = Date.now() + MEDIA_KEY_TIMEOUT_MS;
+    while (pendingMediaKey === token && Date.now() < deadline && wv.isConnected) {
+      await new Promise((r) => setTimeout(r, 500));
+      if (pendingMediaKey !== token) return;
+      if (!safeIsLoading(wv) && (await tryMediaAction(wv, service, action))) break;
+    }
+    if (pendingMediaKey === token) pendingMediaKey = null;
+  }
+
+  window.aria.onMediaKey((action) => {
+    const targetId = mediaOwnerId && getService(mediaOwnerId) ? mediaOwnerId : activeServiceId;
+    if (targetId) runMediaAction(targetId, action);
   });
 
   // ---- Klavye kısayolları: Ctrl+1..9 ile servis değiştir ----
