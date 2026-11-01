@@ -13,7 +13,7 @@ Uygulama yalnızca bir arayüzdür: müzik dosyası indirmez, hesap bilgisi sakl
 - **Harici linkler sistem tarayıcısında** — servislerin açmak istediği yeni pencereler/dış bağlantılar Windows'taki varsayılan tarayıcında açılır
 - **Uyku modu** — arka planda sessiz kalan servisler 5 dakika sonra uyutulur ve belleği boşaltılır (Chrome'daki Bellek Tasarrufu gibi); en son müzik çalan servis (duraklatılmış olsa bile) asla uyutulmaz
 - **Arka planda çalmaya devam eder** — pencereyi kapattığında müzik çalıyorsa uygulama sistem tepsisine (saatin yanına) küçülür ve çalmayı sürdürür; tepsi menüsünden oynat/duraklat, sonraki/önceki parça ve çıkış yapılabilir. Müzik çalmıyorsa X normal şekilde kapatır.
-- **Medya tuşları** — klavyendeki ▶⏸ / ⏭ / ⏮ tuşları aktif servisi kontrol eder
+- **Medya tuşları** — klavyendeki ▶⏸ / ⏭ / ⏮ (ve dizüstülerdeki Fn) tuşları, uygulama arka plandayken ya da oyun öndeyken de en son çalan servisi kontrol eder; Windows'un ses/medya açılır penceresinde de parça bilgisi ve düğmeler görünür
 - **Klavye kısayolları** — `Ctrl+1` … `Ctrl+6` ile servisler arasında geçiş
 - **Gezinme araç çubuğu** — geri / ileri / yenile / sistem tarayıcısında aç
 - Her servis **tembel yüklenir** (tıklayana kadar açılmaz) ve arka planda çalmaya devam eder

@@ -240,11 +240,12 @@ app.on('web-contents-created', (_event, contents) => {
   }
 });
 
-function registerMediaKeys() {
-  globalShortcut.register('MediaPlayPause', () => sendMediaAction('playpause'));
-  globalShortcut.register('MediaNextTrack', () => sendMediaAction('next'));
-  globalShortcut.register('MediaPreviousTrack', () => sendMediaAction('prev'));
-}
+// Medya tuşları (klavyedeki ▶⏸ ⏭ ⏮ ve dizüstülerdeki Fn tuşları) Windows'un medya
+// denetimi (SMTC) üzerinden, Chromium'un yerleşik medya oturumu desteğiyle çalışır:
+// Windows tuşu, uygulama arka plandayken / oyun öndeyken de en son çalan sayfaya
+// iletir ve servisin kendi oynatıcısı (navigator.mediaSession) işler — Chrome'daki gibi.
+// globalShortcut ile kayıt YAPILMAZ: Electron bu durumda Chromium'un medya tuşu
+// desteğini kapatır ve Fn tuşları uygulama önde değilken hiç çalışmaz.
 
 app.whenReady().then(async () => {
   // castlabs Electron kullanılıyorsa Widevine CDM bileşeninin hazır olmasını
@@ -259,7 +260,6 @@ app.whenReady().then(async () => {
 
   createMainWindow();
   createTray();
-  registerMediaKeys();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
