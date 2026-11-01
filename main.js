@@ -240,7 +240,7 @@ app.on('web-contents-created', (_event, contents) => {
   }
 });
 
-// Medya tuşları (klavyedeki ▶⏸ ⏭ ⏮ ve dizüstülerdeki Fn tuşları) Windows'un medya
+// Medya tuşları (klavyedeki ▶⏸ ⏭ ⏮ ve klavyelerin Fn+F tuşu medya kısayolları) Windows'un medya
 // denetimi (SMTC) üzerinden, Chromium'un yerleşik medya oturumu desteğiyle çalışır:
 // Windows tuşu, uygulama arka plandayken / oyun öndeyken de en son çalan sayfaya
 // iletir ve servisin kendi oynatıcısı (navigator.mediaSession) işler — Chrome'daki gibi.

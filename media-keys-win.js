@@ -1,9 +1,9 @@
 'use strict';
 
-// Windows'ta medya tuşlarını (klavyedeki ▶⏸ ⏭ ⏮ ve dizüstülerdeki Fn tuşları)
+// Windows'ta medya tuşlarını (klavyedeki ▶⏸ ⏭ ⏮ ve klavyelerin Fn+F tuşu medya kısayolları)
 // uygulama arka plandayken / oyun öndeyken de görür. İki kaynak dinlenir:
 //  1. Düşük seviye klavye kancası (WH_KEYBOARD_LL): sanal tuş olarak gelen basışlar.
-//  2. Shell kancası (HSHELL_APPCOMMAND): üretici yazılımlarının Fn tuşları için
+//  2. Shell kancası (HSHELL_APPCOMMAND): klavye yazılımlarının (G Hub, Synapse vb.) Fn tuşları için
 //     gönderdiği "uygulama komutları".
 // Aynı basış iki yoldan da gelebileceği için kısa sürede tekrar eden eylem yok sayılır.
 // Tuşlar yutulmaz; Windows'un kendi medya denetimine de ulaşmaya devam eder.
