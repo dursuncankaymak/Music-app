@@ -20,6 +20,6 @@ contextBridge.exposeInMainWorld('aria', {
     ipcRenderer.on('window:visibility', (_event, visible) => callback(visible));
   },
   onMediaKey: (callback) => {
-    ipcRenderer.on('media:key', (_event, action) => callback(action));
+    ipcRenderer.on('media:key', (_event, action, options) => callback(action, options || {}));
   },
 });

@@ -26,7 +26,8 @@
       "preload.js",
       "renderer/**/*",
       "assets/**/*",
-      "build/icon.png"
+      "build/icon.png",
+      "media-keys-win.js"
     ],
     "win": {
       "target": [
@@ -41,6 +42,14 @@
     },
     "portable": {
       "artifactName": "Aria-Music-Portable.${ext}"
-    }
+    },
+    "asarUnpack": [
+      "node_modules/koffi/**",
+      "node_modules/@koromix/**"
+    ],
+    "npmRebuild": false
+  },
+  "dependencies": {
+    "koffi": "^3.3.6"
   }
 }

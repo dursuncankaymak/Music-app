@@ -246,6 +246,9 @@ app.on('web-contents-created', (_event, contents) => {
 // iletir ve servisin kendi oynatıcısı (navigator.mediaSession) işler — Chrome'daki gibi.
 // globalShortcut ile kayıt YAPILMAZ: Electron bu durumda Chromium'un medya tuşu
 // desteğini kapatır ve Fn tuşları uygulama önde değilken hiç çalışmaz.
+// Ancak uygulama açıldıktan sonra henüz hiçbir şey çalmadıysa Windows'un tuşu
+// iletebileceği bir oynatıcı oturumu yoktur; o durum için tuşlar media-keys-win.js
+// ile dinlenir ve arayüz yalnızca hiçbir servis çalmamışken onları uygular.
 
 app.whenReady().then(async () => {
   // castlabs Electron kullanılıyorsa Widevine CDM bileşeninin hazır olmasını
@@ -260,6 +263,9 @@ app.whenReady().then(async () => {
 
   createMainWindow();
   createTray();
+  require('./media-keys-win').install(mainWindow, (action) => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('media:key', action, { fallback: true });
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

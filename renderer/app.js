@@ -145,6 +145,8 @@
     wv.addEventListener('render-process-gone', (e) => {
       const reason = e.details?.reason || e.reason;
       if (reason === 'clean-exit' || !wv.isConnected) return;
+      // Sayfanın medya oturumu da gitti; tuşlar yeniden buradan uygulansın.
+      if (mediaOwnerId === service.id) mediaOwnerId = null;
       setTimeout(() => {
         try { if (wv.isConnected) wv.reload(); } catch { /* hazır değil */ }
       }, 1000);
@@ -450,7 +452,10 @@
     if (pendingMediaKey === token) pendingMediaKey = null;
   }
 
-  window.aria.onMediaKey((action) => {
+  window.aria.onMediaKey((action, options) => {
+    // Bir servis müzik çalmaya başladıysa medya tuşlarını Windows'un medya denetimi
+    // doğrudan o sayfaya iletir; aynı basışı burada da uygularsak iki kez işlenir.
+    if (options.fallback && mediaOwnerId) return;
     const targetId = mediaOwnerId && getService(mediaOwnerId) ? mediaOwnerId : activeServiceId;
     if (targetId) runMediaAction(targetId, action);
   });
